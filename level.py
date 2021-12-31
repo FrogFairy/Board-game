@@ -43,7 +43,8 @@ clock = pygame.time.Clock()
 con = sqlite3.connect(os.path.join('data', "levels"))
 cur = con.cursor()
 
-snow = cur.execute("""SELECT id FROM level""").fetchall()
+snow = True if cur.execute("""SELECT value FROM setting WHERE name = 'snow'""").fetchone()[0] == 'True' else False
+sound = True if cur.execute("""SELECT value FROM setting WHERE name = 'sound'""").fetchone()[0] == 'True' else False
 
 
 class Board:
@@ -98,7 +99,7 @@ class Board:
         self.top = top
         self.cell_size = cell_size
 
-    def load_board(self, pic):
+    def load_board(self, pic, new=False):
         result = cur.execute(f"""SELECT * FROM level
                     WHERE id == '{self.id}'""").fetchall()
         self.width = int(result[0][1])
@@ -111,7 +112,11 @@ class Board:
         self.top = int(result[0][8])
         self.numbers = self.uncoding(result[0][9], 'numbers')
         self.steps = self.uncoding(result[0][10], 'steps') if result[0][10] else []
-        if self.check() is True and not pic:
+        if self.check() is True and not pic or new:
+            global all_sprites, error_sprites, setting_sprites
+            all_sprites = pygame.sprite.Group()
+            error_sprites = pygame.sprite.Group()
+            setting_sprites = pygame.sprite.Group()
             self.step = None
             self.player = [[0] * self.width for _ in range(self.height)]
             for y in range(self.height):
@@ -468,7 +473,7 @@ def error(check, board, pic):
 
 
 def setting(board):
-    h0 = (height - 35 * 4 - 200) // 2
+    h0 = (height - 35 * 5 - 250) // 2
     w0 = (width - 420) // 2
     draw_setting(board)
     while True:
@@ -479,29 +484,34 @@ def setting(board):
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if w0 + 420 <= event.pos[0] <= w0 + 475 and h0 - 50 <= event.pos[1] <= h0 + 5:
                     return
-                elif 280 <= event.pos[0] <= 720 and 575 <= event.pos[1] <= 615:
-                    global levels
-                    cur.execute('DELETE FROM level;', )
-                    con.commit()
+                elif 280 <= event.pos[0] <= 720 and 532 <= event.pos[1] <= 587:
+                    board.load_board(False, True)
                     return
-                elif 665 <= event.pos[0] <= 720 and 405 <= event.pos[1] <= 455:
+                elif 280 <= event.pos[0] <= 720 and 617 <= event.pos[1] <= 672:
+                    board.stop = True
+                    return
+                elif 665 <= event.pos[0] <= 720 and 364 <= event.pos[1] <= 415:
                     global sound
                     if sound:
-                        pygame.draw.line(screen, pygame.Color('black'), (669, 459), (714, 405), 10)
+                        pygame.draw.line(screen, pygame.Color('black'), (669, 415), (714, 362), 10)
                         sound = False
                     else:
                         screen.fill(background)
                         sound = True
-                        draw_setting(window)
-                elif 665 <= event.pos[0] <= 720 and 490 <= event.pos[1] <= 545:
+                        draw_setting(board)
+                    cur.execute(f"UPDATE setting SET value = '{sound}' WHERE name = 'sound';")
+                    con.commit()
+                elif 665 <= event.pos[0] <= 720 and 449 <= event.pos[1] <= 500:
                     global snow
                     if snow:
-                        pygame.draw.line(screen, pygame.Color('black'), (669, 544), (714, 490), 10)
+                        pygame.draw.line(screen, pygame.Color('black'), (669, 501), (714, 447), 10)
                         snow = False
                     else:
                         screen.fill(background)
                         snow = True
-                        draw_setting(window)
+                        draw_setting(board)
+                    cur.execute(f"UPDATE setting SET value = '{snow}' WHERE name = 'snow';")
+                    con.commit()
         pygame.display.flip()
         clock.tick(50)
 
@@ -514,8 +524,8 @@ def draw_setting(board):
     fon = pygame.transform.smoothscale(screen, (100, 100))
     fon = pygame.transform.scale(fon, size)
     screen.blit(fon, (0, 0))
-    buttons = ['Настройки', 'Звук', 'Снежинки', 'Возобновить', 'Выйти в главное меню']
-    h0 = (height - 35 * 4 - 200) // 2
+    buttons = ['Настройки', 'Звук', 'Снежинки', 'Заново', 'Выйти в главное меню']
+    h0 = (height - 35 * 5 - 250) // 2
     w0 = (width - 420) // 2
     font = pygame.font.Font(None, 50)
     for i in range(len(buttons)):
@@ -542,9 +552,9 @@ def draw_setting(board):
     pygame.draw.line(screen, pygame.Color('black'), (w0 + 427, h0 - 45), (w0 + 468, h0), 10)
     pygame.draw.line(screen, pygame.Color('black'), (w0 + 468, h0 - 45), (w0 + 427, h0), 10)
     if not snow:
-        pygame.draw.line(screen, pygame.Color('black'), (669, 544), (714, 490), 10)
+        pygame.draw.line(screen, pygame.Color('black'), (669, 501), (714, 447), 10)
     if not sound:
-        pygame.draw.line(screen, pygame.Color('black'), (669, 459), (714, 405), 10)
+        pygame.draw.line(screen, pygame.Color('black'), (669, 415), (714, 362), 10)
     setting_sprites.draw(screen)
 
 
@@ -558,7 +568,6 @@ def end_level(board, pic=None):
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    pass
                     if r_r[0][0] <= event.pos[0] <= r_r[1][0] + r_r[0][0] and r_r[0][1] <= event.pos[1] <= r_r[1][1] + r_r[0][1]:
                         return
             pygame.display.flip()
@@ -594,7 +603,6 @@ def draw_end(board, pic=None):
         text_x = (width - text_w) // 2
         text_y = r_r[0][1] + r_r[1][1] + 25
         r_r = ((r_r[0][0], text_y - 25), (r_r[1][0], text_h + 50))
-        print(r_r)
         pygame.draw.rect(screen, button_color, r_r, border_radius=20)
         screen.blit(text, (text_x, text_y))
 

@@ -93,7 +93,6 @@ class MainWindow:
     def on_click(self, button):
         if button == 'build':
             build_level()
-            # return
         elif button == 'right':
             self.id += 1
             self.draw_arrows()
@@ -102,10 +101,12 @@ class MainWindow:
             self.draw_arrows()
         elif button == 'load':
             load_level(self.id)
-            # return
         elif button == 'setting':
             setting(self)
-            # return
+        global levels
+        levels = cur.execute("""SELECT id FROM level""").fetchall()
+        self.draw_arrows()
+
 
 
 class Sprite(pygame.sprite.Sprite):
@@ -152,9 +153,7 @@ def build_level():
                 else:
                     n = None
                 if n:
-                    global levels
                     level.main(n, len(levels))
-                    levels = cur.execute("""SELECT id FROM level""").fetchall()
                     return
         pygame.display.flip()
         clock.tick(50)
