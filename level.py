@@ -642,8 +642,9 @@ def end_level(board, pic=None):
             pygame.mixer.music.set_volume(0)
             sound_complete.play()
         r_r = ((116, 585), (768, 64))
-        for i in range(5):
-            create_particles((rnd.randint(50, width - 50), rnd.randint(0, 370)))
+        for i in range(30, 941, 188):
+            pos = (rnd.randint(i, i + 150), rnd.randint(100, 250))
+            create_particles(pos, (0, 0, width, 300))
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -661,7 +662,7 @@ def end_level(board, pic=None):
             particles.draw(screen)
             particles.update()
             pygame.display.flip()
-            clock.tick(50)
+            clock.tick(10)
 
 
 def draw_end(board, pic=None):
@@ -729,11 +730,11 @@ def draw_study():
     fon = pygame.transform.smoothscale(screen, (100, 100))
     fon = pygame.transform.scale(fon, size)
     screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 40)
+    font = pygame.font.Font(None, 35)
     h0 = 180
     w0 = 200
     w = width - w0 * 2
-    h = 730
+    h = 750
     t = 'Человечки расположены\n' \
         'по сетке.\n' \
         'Вам нужно поместить один домик\n' \
@@ -746,10 +747,16 @@ def draw_study():
         'из четырех соседних клеток человечка\n'\
         '(по горизонтали или по вертикали,\n' \
         'но не по диагонали).\n'\
-        'Палатки не могут касаться друг друга,\n' \
-        'даже по диагонали.'
+        'Домики не могут касаться друг друга,\n' \
+        'даже по диагонали.\n' \
+        'Чтобы установить снег нажмите\n' \
+        'на пустую клетку.\n' \
+        'Чтобы установить домик нажмите\n' \
+        'на клетку со снегом.\n' \
+        'При нажатии на зеленую цифру\n' \
+        'все пустые поля заполняются снегом.'
     t1 = []
-    pygame.draw.rect(screen, text_color, ((w0, h0), (w, h)))
+    pygame.draw.rect(screen, text_color, ((w0, h0), (w, h)), border_radius=20)
     pygame.draw.rect(screen, button_color, ((w0 + w - 27, h0 - 25), (55, 55)))
     pygame.draw.line(screen, pygame.Color('black'), (w0 + w - 25, h0 - 20), (w0 + w + 26, h0 + 20), 10)
     pygame.draw.line(screen, pygame.Color('black'), (w0 + w + 26, h0 - 20), (w0 + w - 25, h0 + 20), 10)
@@ -758,7 +765,7 @@ def draw_study():
             text0 = font.render('Человечки расположены', True, background)
             text1 = font.render('Человечки ', True, background)
             text_x = w0 + (w - text0.get_width() - 50) // 2
-            text_y = h0 + 30 + 50 * i
+            text_y = h0 + 30 + 35 * i
             if not any(map(lambda i: i.rect.collidepoint(text_x + text1.get_width(), text_y - 20), study_sprites)):
                 Objects(study_sprites, images, 'people', text_x + text1.get_width(), text_y - 20, 50)
             t1.append([text1, text_x, text_y])
@@ -767,18 +774,18 @@ def draw_study():
         elif t.split('\n')[i] == 'Вам нужно поместить один домик':
             text = font.render('Вам нужно поместить один домик ', True, background)
             text_x = w0 + (w - text.get_width() - 40) // 2
-            text_y = h0 + 30 + 50 * i
+            text_y = h0 + 30 + 35 * i
             if not any(map(lambda i: i.rect.collidepoint(text_x + text.get_width(), text_y - 20), study_sprites)):
                 Objects(study_sprites, images, 'house', text_x + text.get_width(), text_y - 20, 50)
         elif t.split('\n')[i] == 'В других клетках должен быть снег':
             text = font.render('В других клетках должен быть снег ', True, background)
             text_x = w0 + (w - text.get_width() - 40) // 2
-            text_y = h0 + 30 + 50 * i
+            text_y = h0 + 30 + 35 * i
             pygame.draw.rect(screen, grass[0], ((text_x + text.get_width(), text_y - 20), (50, 50)), border_radius=20)
         else:
             text = font.render(t.split('\n')[i], True, background)
             text_x = w0 + (w - text.get_width()) // 2
-            text_y = h0 + 30 + 50 * i
+            text_y = h0 + 30 + 35 * i
         t1.append([text, text_x, text_y])
     study_sprites.draw(screen)
     for i in t1:

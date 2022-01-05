@@ -8,7 +8,6 @@ import sys
 pygame.init()
 size = width, height = 1000, 1000
 screen = pygame.display.set_mode(size)
-screen_rect = (0, 0, width, height)
 
 
 def load_image(name, color_key=None):
@@ -63,61 +62,52 @@ def initilize_snow():
         Snow(x, y)
 
 
-class Particles(pygame.sprite.Sprite):
-    def __init__(self, sheet, columns, rows, pos, dx, dy):
+class Fireworks(pygame.sprite.Sprite):
+    def __init__(self, pos, color, screen_rect):
         super().__init__(particles)
-        self.frames = []
-        self.cut_sheet(sheet, columns, rows)
-        self.cur_frame = 0
-        self.image = self.frames[self.cur_frame]
+        self.move = [[-10, 0], [10, 0], [0, 10], [0, -10],
+                       [10, 10], [-10, 10], [-10, -10], [10, -10],
+                       [-15, 5], [-10, 5], [-5, 10], [-5, 15],
+                       [15, 5], [10, 5], [5, 10], [5, 15],
+                       [15, -5], [10, -5], [5, -10], [5, -15],
+                       [-15, -5], [-10, -5], [-5, -10], [-5, -15]]
+        self.points = [[[100, 100]] for _ in range(24)]
+        self.colors = [[0, 0, 0] for _ in range(24)]
+        for i in range(len(self.colors)):
+            self.colors[i][color] = rnd.randint(50, 255)
+        self.screen_rect = screen_rect
+        self.pos = pos
+        self.size = [200, 200]
+        self.image = pygame.Surface(self.size, pygame.SRCALPHA, 32)
+        self.image = self.image.convert_alpha()
+        self.image.fill([0, 0, 0, 0])
         self.rect = self.image.get_rect()
-        self.velocity = [dx, dy]
-        self.rect.x, self.rect.y = pos
-        self.gravity = 1
-
-    def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
-        for j in range(rows):
-            for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
+        self.rect.x, self.rect.y = self.pos[0] - self.size[0] / 2, self.pos[1] - self.size[1] / 2
+        self.gravity = 3
+        self.flag = False
 
     def update(self):
-        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-        self.image = self.frames[self.cur_frame]
-        self.velocity[1] += self.gravity
-        self.rect.x += self.velocity[0]
-        self.rect.y += self.velocity[1]
-        if not self.rect.colliderect(screen_rect):
-            self.kill()
+        self.image.fill((0, 0, 0, 0))
+        for i in range(24):
+            if not (self.pos[0] - 100 <= self.points[i][-1][0] + self.rect.x <= self.pos[0] + 100
+                    and
+                    self.pos[1] - 100 <= self.points[i][-1][0] + self.rect.y <= self.pos[1] + 100)\
+                    or self.flag:
+                if len(self.points[i]) > 1:
+                    del self.points[i][0]
+                self.flag = True
+            else:
+                self.points[i].append([self.points[i][-1][0] + self.move[i][0], self.points[i][-1][1] + self.move[i][1]])
+            if len(self.points[i]) == 1:
+                self.move[i][1] = self.gravity if self.move[i][1] < 0 else self.move[i][1] + self.gravity
+                self.move[i][0] = 0
+                self.points[i][-1][0] += self.move[i][0]
+                self.points[i][-1][1] += self.move[i][1]
+            for j in range(len(self.points[i])):
+                pygame.draw.circle(self.image, self.colors[i], (self.points[i][j][0], self.points[i][j][1]), 5)
+            if not self.rect.colliderect(self.screen_rect):
+                self.kill()
 
 
-def create_particles(position):
-    particle_count = 20
-    numbers = range(-5, 20)
-    for _ in range(particle_count):
-        Particles(load_image("particles2.png"), 2, 1, position, rnd.choice(numbers), rnd.choice(numbers))
-
-
-def main():
-    screen.fill((0, 0, 0))
-    running = True
-    clock = pygame.time.Clock()
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                create_particles(pygame.mouse.get_pos())
-        screen.fill((255, 255, 255))
-        particles.draw(screen)
-        particles.update()
-        clock.tick(10)
-        pygame.display.flip()
-    pygame.quit()
-    sys.exit()
-
-if __name__ == '__main__':
-    main()
+def create_particles(position, screen_rect):
+    Fireworks(position, rnd.randint(0, 2), screen_rect)
