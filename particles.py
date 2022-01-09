@@ -111,3 +111,25 @@ class Fireworks(pygame.sprite.Sprite):
 
 def create_particles(position, screen_rect):
     Fireworks(position, rnd.randint(0, 2), screen_rect)
+
+
+def main():
+    screen.fill((0, 0, 0))
+    running = True
+    clock = pygame.time.Clock()
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                create_particles(pygame.mouse.get_pos(), (0, 0, width, height))
+        screen.fill(background)
+        particles.draw(screen)
+        particles.update()
+        clock.tick(10)
+        pygame.display.flip()
+    pygame.quit()
+    sys.exit()
+
+if __name__ == '__main__':
+    main()

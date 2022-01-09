@@ -41,6 +41,7 @@ all_sprites = pygame.sprite.Group()
 error_sprites = pygame.sprite.Group()
 setting_sprites = pygame.sprite.Group()
 study_sprites = pygame.sprite.Group()
+animated_sprites = pygame.sprite.Group()
 clock = pygame.time.Clock()
 
 con = sqlite3.connect(os.path.join('data', 'database', "levels"))
@@ -140,10 +141,11 @@ class Board:
         self.numbers = self.uncoding(result[0][9], 'numbers')
         self.steps = self.uncoding(result[0][10], 'steps') if result[0][10] else []
         if self.check() is True and not pic or new:
-            global all_sprites, error_sprites, setting_sprites
+            global all_sprites, error_sprites, setting_sprites, animated_sprites
             all_sprites = pygame.sprite.Group()
             error_sprites = pygame.sprite.Group()
             setting_sprites = pygame.sprite.Group()
+            animated_sprites = pygame.sprite.Group()
             self.step = None
             self.player = [[0] * self.width for _ in range(self.height)]
             for y in range(self.height):
@@ -152,7 +154,7 @@ class Board:
                         self.player[y][x] = 2
             self.set_numbers()
 
-    def render(self, pic=None):
+    def render(self, pic=None, d=None):
         global all_sprites
         if not pic:
             pygame.draw.rect(screen, button_color, ((20, 20), (70, 70)), border_radius=20)
@@ -173,30 +175,33 @@ class Board:
                 Objects(all_sprites, images, 'setting', 22, 22, 64)
         for y in range(self.height):
             for x in range(self.width):
-                r_r = ((self.left + x * self.cell_size, self.top + y * self.cell_size), (self.cell_size, self.cell_size))
-                if self.player[y][x] == 2:
-                    pygame.draw.rect(screen, grass[0], r_r, border_radius=20)
-                    color = background
-                    if not any(map(lambda i: i.rect.collidepoint(self.left + x * self.cell_size + 1,
-                                                                 self.top + y * self.cell_size + 1),
-                                   all_sprites)):
-                        Objects(all_sprites, images, 'people', r_r[0][0] + 1, r_r[0][1] + 1, self.cell_size - 2)
-                elif self.player[y][x] == 0:
-                    pygame.draw.rect(screen, background, r_r, border_radius=20)
-                    pygame.draw.rect(screen, text_color, (r_r[0][0] + 5, r_r[0][1] + 5,
-                                                       r_r[1][0] - 10, r_r[1][1] - 10), 3)
-                    color = text_color
-                elif self.player[y][x] == 1:
-                    pygame.draw.rect(screen, grass[0], r_r, border_radius=20)
-                    if not any(map(lambda i: i.rect.collidepoint(self.left + x * self.cell_size + 1,
-                                                                 self.top + y * self.cell_size + 1),
-                                   all_sprites)):
-                        Objects(all_sprites, images, 'house', r_r[0][0] + 1, r_r[0][1] + 1, self.cell_size - 2)
-                    color = background
-                else:
-                    pygame.draw.rect(screen, grass[self.player[y][x] - 3], r_r, border_radius=20)
-                    color = background
-                pygame.draw.rect(screen, color, r_r, 3)
+                r_r = ((self.left + x * self.cell_size, self.top + y * self.cell_size),
+                       (self.cell_size, self.cell_size))
+                if not d or [x, y] not in d:
+                    if self.player[y][x] == 2:
+                        pygame.draw.rect(screen, grass[0], r_r, border_radius=20)
+                        color = background
+                        if not any(map(lambda i: i.rect.x == self.left + x * self.cell_size + 2 and
+                                                 i.rect.y == self.top + y * self.cell_size - 2,
+                                       animated_sprites)):
+                            AnimatedSprite(animated_sprites, images, 'people', 5, 1, r_r[0][0] + 2, r_r[0][1] - 2,
+                                          self.cell_size - 4)
+                    elif self.player[y][x] == 0:
+                        pygame.draw.rect(screen, background, r_r, border_radius=20)
+                        pygame.draw.rect(screen, text_color, (r_r[0][0] + 5, r_r[0][1] + 5,
+                                                           r_r[1][0] - 10, r_r[1][1] - 10), 3)
+                        color = text_color
+                    elif self.player[y][x] == 1:
+                        pygame.draw.rect(screen, grass[0], r_r, border_radius=20)
+                        if not any(map(lambda i: i.rect.collidepoint(self.left + x * self.cell_size + 1,
+                                                                     self.top + y * self.cell_size + 1),
+                                       all_sprites)):
+                            Objects(all_sprites, images, 'house', r_r[0][0] + 1, r_r[0][1] + 1, self.cell_size - 2)
+                        color = background
+                    else:
+                        pygame.draw.rect(screen, grass[self.player[y][x] - 3], r_r, border_radius=20)
+                        color = background
+                    pygame.draw.rect(screen, color, r_r, 3)
                 if y == 0 or x == 0:
                     if x == 0 and y == 0:
                         num1 = self.numbers[y][x]
@@ -220,6 +225,39 @@ class Board:
             self.step = True
             global error_sprites
             error_sprites = pygame.sprite.Group()
+
+    def draw_grass(self, *args):
+        data = []
+        for i in args:
+            x, y = i
+            r_r = ((self.left + x * self.cell_size, self.top + y * self.cell_size), (self.cell_size, self.cell_size))
+            pos = ((r_r[0][0] + self.cell_size / 2, r_r[0][1] + self.cell_size / 2), (0, 0))
+            pygame.draw.rect(screen, background, r_r, 3)
+            pygame.draw.rect(screen, background, (r_r[0][0] + 5, r_r[0][1] + 5,
+                                                  r_r[1][0] - 10, r_r[1][1] - 10), 3)
+            data.append([pos, r_r])
+        while data[0][0][0][0] > data[0][1][0][0]:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    self.get_click(event.pos)
+                    self.render()
+                    return
+            screen.fill(background)
+            run_snow()
+            self.render(d=list(args))
+            for i in range(len(data)):
+                pygame.draw.rect(screen, grass[self.player[args[i][1]][args[i][0]] - 3], data[i][0], border_radius=15)
+                pygame.draw.rect(screen, text_color, data[i][1], 3)
+                data[i][0] = ((data[i][0][0][0] - 5, data[i][0][0][1] - 5),
+                              (data[i][0][1][0] + 10, data[i][0][1][1] + 10))
+            all_sprites.draw(screen)
+            animated_sprites.draw(screen)
+            animated_sprites.update()
+            pygame.display.flip()
+            clock.tick(50)
 
     def check(self):
         a = 0
@@ -332,6 +370,7 @@ class Board:
                             else:
                                 self.player[i][x] = rnd.randint(3, 6)
                             a.append([x, i])
+                self.draw_grass(*a)
             elif x < 0:
                 if self.numbers[1][y][-1] is True:
                     for i in range(self.width):
@@ -341,6 +380,7 @@ class Board:
                             else:
                                 self.player[y][i] = rnd.randint(3, 6)
                             a.append([i, y])
+                self.draw_grass(*a)
             else:
                 if self.player[y][x] in range(3, 7):
                     self.player[y][x] = 1
@@ -349,6 +389,7 @@ class Board:
                         self.player[y][x] = self.board[y][x]
                     else:
                         self.player[y][x] = rnd.randint(3, 6)
+                    self.draw_grass([x, y])
                 elif self.player[y][x] == 1:
                     self.player[y][x] = 0
                     for i in all_sprites:
@@ -463,6 +504,35 @@ class Objects(Sprite):
         self.image = tile_images[tile_type]
         self.image = pygame.transform.scale(self.image, (s, s))
         self.rect = self.image.get_rect().move(pos_x, pos_y)
+
+
+class AnimatedSprite(pygame.sprite.Sprite):
+    def __init__(self, sprite_group, tile_images, tile_type, columns, rows, x, y, s):
+        super().__init__(sprite_group)
+        self.frames = []
+        self.cut_sheet(tile_images[tile_type], columns, rows)
+        self.cur_frame = 0
+        self.size = s
+        self.image = self.frames[self.cur_frame]
+        self.image = pygame.transform.scale(self.image, (s, s))
+        self.rect = self.rect.move(x, y)
+        self.n = 5
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        if self.n  % 5 == 0:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
+            self.image = pygame.transform.scale(self.image, (self.size, self.size))
+        self.n += 1
 
 
 def error(check, board, pic):
@@ -666,10 +736,11 @@ def end_level(board, pic=None):
 
 
 def draw_end(board, pic=None):
-    global all_sprites
+    global all_sprites, animated_sprites
     s, k = (50, 25) if pic else (100, 50)
     if pic:
         all_sprites = pygame.sprite.Group()
+        animated_sprites = pygame.sprite.Group()
     else:
         board.render()
         all_sprites.draw(screen)
@@ -793,11 +864,12 @@ def draw_study():
 
 
 def main(n, id, pos_x=200, pos_y=200, load=None, pic=None):
-    global all_sprites, error_sprites, screen, width, height, size, snow, sound, play_snow
+    global all_sprites, error_sprites, screen, width, height, size, snow, sound, play_snow, animated_sprites
     snow = True if cur.execute("""SELECT value FROM setting WHERE name = 'snow'""").fetchone()[0] == 'True' else False
     sound = True if cur.execute("""SELECT value FROM setting WHERE name = 'sound'""").fetchone()[0] == 'True' else False
     all_sprites = pygame.sprite.Group()
     error_sprites = pygame.sprite.Group()
+    animated_sprites = pygame.sprite.Group()
     size = width, height = 1000, 1000
     screen = pygame.display.set_mode(size)
     if not pic:
@@ -822,6 +894,8 @@ def main(n, id, pos_x=200, pos_y=200, load=None, pic=None):
             run_snow()
             board.render()
             all_sprites.draw(screen)
+            animated_sprites.draw(screen)
+            animated_sprites.update()
             pygame.display.flip()
             clock.tick(50)
         con.close()
@@ -835,4 +909,5 @@ def main(n, id, pos_x=200, pos_y=200, load=None, pic=None):
         board.set_view(x, y, width // (n + 1))
         board.render(True)
         all_sprites.draw(screen)
+        animated_sprites.draw(screen)
         return
