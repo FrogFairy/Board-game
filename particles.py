@@ -29,6 +29,7 @@ images = [load_image('snow1.png'), load_image('snow2.png'), load_image('snow3.pn
           load_image('snow9.png'), load_image('snow10.png')]
 snowfall = pygame.sprite.Group()
 particles = pygame.sprite.Group()
+clock = pygame.time.Clock()
 
 # класс снега
 class Snow(pygame.sprite.Sprite):

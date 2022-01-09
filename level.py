@@ -36,6 +36,7 @@ background = pygame.Color('#d3ad8d')
 text_color = pygame.Color('#8c4d2c')
 button_color = pygame.Color('#2C7E8C')
 images = {'house': load_image('house.png'), 'people': load_image('people.png'),
+          'people1': load_image('people1.png'),
           'cancel': load_image('cancel.png'), 'setting': load_image('setting.png'),
           'sound': load_image('sound.png'), 'snow': load_image('snow.png')}
 grass = [pygame.Color(240, 240, 240), pygame.Color('#bad5dc'), pygame.Color('#e3e8ee'),
@@ -998,7 +999,7 @@ def draw_study():
             text_x = w0 + (w - text0.get_width() - 50) // 2
             text_y = h0 + 30 + 35 * i
             if not any(map(lambda i: i.rect.collidepoint(text_x + text1.get_width(), text_y - 20), study_sprites)):
-                Objects(study_sprites, images, 'people', text_x + text1.get_width(), text_y - 20, 50)
+                Objects(study_sprites, images, 'people1', text_x + text1.get_width(), text_y - 20, 50)
             t1.append([text1, text_x, text_y])
             text = font.render(' расположены', True, background)
             text_x += text1.get_width() + 50
