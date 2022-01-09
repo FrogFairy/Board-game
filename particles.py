@@ -30,20 +30,24 @@ images = [load_image('snow1.png'), load_image('snow2.png'), load_image('snow3.pn
 snowfall = pygame.sprite.Group()
 particles = pygame.sprite.Group()
 
+# класс снега
 class Snow(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__(snowfall)
+        # случайно выбираем изображение, размер и скорость
         self.image = rnd.choice(images)
         self.size = rnd.randint(10, 100)
         self.image = pygame.transform.scale(self.image, (self.size, self.size))
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = x, y
-        self.speed = rnd.randint(1, 3)
+        self.speed = rnd.randint(1, 5)
 
     def update(self):
         self.rect.y += self.speed
+        # если снежинка вылетела за пределы экрана отрисовываем ее сверху
         if self.rect.y > height:
             self.rect.y = -self.size
+        # выбираем случайное направление
         i = rnd.randint(1, 3)
         if i == 1:  # поворот направо
             self.rect.x += 1
@@ -56,6 +60,7 @@ class Snow(pygame.sprite.Sprite):
 
 
 def initilize_snow():
+    # генерируем 50 снежинок
     for i in range(0, 50):
         x = rnd.randint(0, width)
         y = rnd.randint(0, height)
@@ -65,14 +70,18 @@ def initilize_snow():
 class Fireworks(pygame.sprite.Sprite):
     def __init__(self, pos, color, screen_rect):
         super().__init__(particles)
+        # смещение точек
         self.move = [[-10, 0], [10, 0], [0, 10], [0, -10],
                        [10, 10], [-10, 10], [-10, -10], [10, -10],
                        [-15, 5], [-10, 5], [-5, 10], [-5, 15],
                        [15, 5], [10, 5], [5, 10], [5, 15],
                        [15, -5], [10, -5], [5, -10], [5, -15],
                        [-15, -5], [-10, -5], [-5, -10], [-5, -15]]
+        # точки и цвета
         self.points = [[[100, 100]] for _ in range(24)]
         self.colors = [[0, 0, 0] for _ in range(24)]
+        # в color передается 0, 1 или 2 - r, g или b соотвественно.
+        # Меняется только этот параметр, остальные остаются 0
         for i in range(len(self.colors)):
             self.colors[i][color] = rnd.randint(50, 255)
         self.screen_rect = screen_rect
@@ -84,11 +93,15 @@ class Fireworks(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = self.pos[0] - self.size[0] / 2, self.pos[1] - self.size[1] / 2
         self.gravity = 3
+        # флаг означает, начали ли точки падать вниз
         self.flag = False
 
     def update(self):
+        # у image делаем прозрачный фон
         self.image.fill((0, 0, 0, 0))
         for i in range(24):
+            # если точка дошла до "края" прямоугольника, все точки,
+            # нарисованные по этой линии удаляются, а точка падает вниз
             if not (self.pos[0] - 100 <= self.points[i][-1][0] + self.rect.x <= self.pos[0] + 100
                     and
                     self.pos[1] - 100 <= self.points[i][-1][0] + self.rect.y <= self.pos[1] + 100)\
@@ -96,13 +109,17 @@ class Fireworks(pygame.sprite.Sprite):
                 if len(self.points[i]) > 1:
                     del self.points[i][0]
                 self.flag = True
+            # иначе добавляем в линию этой точки еще одну с координатой + смещением
             else:
-                self.points[i].append([self.points[i][-1][0] + self.move[i][0], self.points[i][-1][1] + self.move[i][1]])
+                self.points[i].append([self.points[i][-1][0] + self.move[i][0],
+                                       self.points[i][-1][1] + self.move[i][1]])
+            # если мы удалили все ненужные точки, точка начинает падать вниз
             if len(self.points[i]) == 1:
                 self.move[i][1] = self.gravity if self.move[i][1] < 0 else self.move[i][1] + self.gravity
                 self.move[i][0] = 0
                 self.points[i][-1][0] += self.move[i][0]
                 self.points[i][-1][1] += self.move[i][1]
+            # отрисовываем всю линию точек
             for j in range(len(self.points[i])):
                 pygame.draw.circle(self.image, self.colors[i], (self.points[i][j][0], self.points[i][j][1]), 5)
             if not self.rect.colliderect(self.screen_rect):
@@ -110,26 +127,5 @@ class Fireworks(pygame.sprite.Sprite):
 
 
 def create_particles(position, screen_rect):
+    # генерирует фейерверк по координатам
     Fireworks(position, rnd.randint(0, 2), screen_rect)
-
-
-def main():
-    screen.fill((0, 0, 0))
-    running = True
-    clock = pygame.time.Clock()
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                create_particles(pygame.mouse.get_pos(), (0, 0, width, height))
-        screen.fill(background)
-        particles.draw(screen)
-        particles.update()
-        clock.tick(10)
-        pygame.display.flip()
-    pygame.quit()
-    sys.exit()
-
-if __name__ == '__main__':
-    main()
