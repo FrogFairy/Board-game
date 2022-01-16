@@ -70,6 +70,10 @@ pygame.mixer.music.queue(os.path.join('data', 'music', music[3]))
 pygame.mixer.music.queue(os.path.join('data', 'music', music[4]))
 pygame.mixer.music.queue(os.path.join('data', 'music', music[5]))
 pygame.mixer.music.queue(os.path.join('data', 'music', music[6]))
+sound_button.set_volume(0.7)
+sound_cell.set_volume(0.7)
+sound_complete.set_volume(0.7)
+sound_fail.set_volume(0.7)
 # запускаем звук и снег, если они включены
 if sound:
     pygame.mixer.music.play()

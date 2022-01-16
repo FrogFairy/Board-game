@@ -44,6 +44,7 @@ pygame.mixer.music.queue(os.path.join('data', 'music', music[4]))
 pygame.mixer.music.queue(os.path.join('data', 'music', music[5]))
 pygame.mixer.music.queue(os.path.join('data', 'music', music[6]))
 sound_button = pygame.mixer.Sound(os.path.join('data', 'music', 'button sound.mp3'))
+sound_button.set_volume(0.7)
 # запускаем музыку, если звук в игре включен
 if sound:
     pygame.mixer.music.play()
@@ -282,6 +283,7 @@ def setting(window):
                     global levels
                     cur.execute('DELETE FROM level;',)
                     con.commit()
+                    window.id = -1
                     return
                 # при нажатии на кнопку со звуком либо включаем его, либо выключаем
                 elif 665 <= event.pos[0] <= 720 and 405 <= event.pos[1] <= 455:
