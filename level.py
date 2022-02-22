@@ -727,6 +727,7 @@ def error(check, board, pic):
         run = True
         all_sprites.draw(screen)
         error_sprites.draw(screen)
+        animated_sprites.draw(screen)
         while run:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -816,6 +817,7 @@ def setting(board):
 def draw_setting(board):
     board.render()
     all_sprites.draw(screen)
+    animated_sprites.draw(screen)
     run_snow()
     global setting_sprites
     setting_sprites = pygame.sprite.Group()
@@ -901,6 +903,7 @@ def draw_end(board, pic=None):
     else:
         board.render()
         all_sprites.draw(screen)
+        animated_sprites.draw(screen)
         run_snow()
     # размываем окно
     fon = pygame.transform.smoothscale(screen, (70, 70))
